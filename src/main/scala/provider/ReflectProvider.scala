@@ -12,33 +12,36 @@ sealed class ReflectProvider {
     * val bObj: B = Reflect.FromTo[A, B](aObj)
     */
   def FromTo[C](obj: Any)(implicit tag: ClassTag[C]): Option[C] = {
+    _history = Seq()
     val tarObj: C = tag.runtimeClass.getDeclaredConstructor().newInstance().asInstanceOf[C]
-    return _controller(obj, tarObj)
+    return _controller(obj, tarObj, 0)
   }
 
-  private def _controller[C](obj: Any, tarObj: C): Option[C] = {
+  // The assigned historical definitions are stored here based on their levels.
+  private var _history: Seq[(String, Int)] = Seq()
+
+  private def _controller[C](obj: Any, tarObj: C, level: Int): Option[C] = {
     return _null[C](obj, tarObj, (real: Any, target: C) => {
-      if (real.isInstanceOf[Tuple2[_, _]]) {
-        val tupleObj = obj.asInstanceOf[Tuple2[_, _]]
-        val tuple1 = _null(tupleObj._1, target, (subReal: Any, subTarget: C) => {
-          _controller(subReal, subTarget).getOrElse(target)
-        })
-
+      if (_classTypeName(real).contains("Tuple")) {
         var source: C = target
-        if (tuple1.isDefined) {
-          source = tuple1.get
-        }
+        _getClass(real).getDeclaredFields.foreach(tuple => {
+          tuple.setAccessible(true)
+          val tupled = _null(tuple.get(real), target, (subReal: Any, subTarget: C) => {
+            _controller(subReal, subTarget, level).getOrElse(target)
+          })
 
-        val tuple2 = _null(tupleObj._2, source, (subReal: Any, subTarget: C) => {
-          _controller(subReal, subTarget).getOrElse(source)
+          if (tupled.isDefined) {
+            source = tupled.get
+          }
         })
-
-        if (tuple2.isDefined) {
-          source = tuple2.get
-        }
         source
       } else {
-        _reflect(obj, tarObj, null)
+        if (_setIsValid(obj)) {
+          _checker(obj, tarObj, level)
+          tarObj
+        } else {
+          _reflect(obj, tarObj, level)
+        }
       }
     })
   }
@@ -58,89 +61,123 @@ sealed class ReflectProvider {
     }
   }
 
-  private def _reflect[C](obj: Any, tarObj: C, parent: (Field, Any, Boolean) = null): C = {
+  private def _reflect[C](obj: Any, tarObj: C, level: Int, parent: (Field, Any, Boolean) = null): C = {
     _getClass(obj).getDeclaredFields.foreach(field => {
       field.setAccessible(true)
-      _checker(field, obj, tarObj, parent)
+      _checker(obj, tarObj, level, field, parent)
     })
+
+    // The values ​​of the same type can be skipped in the next assignment thanks to the history definition records.
+    _history = _history :+ (_classTypeName(obj), level)
+
     return tarObj
   }
 
-  private def _checker(field: Field, obj: Any, tarObj: Any, parent: (Field, Any, Boolean) = null): Unit = {
-    try {
-      val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
-        || (if (parent != null) parent._1.getName + x.getName == field.getName else false)).headOption
-      if (dest1.isDefined) {
-        val value = field.get(obj)
-        if (value.isInstanceOf[Option[_]]) {
-          val optValue = value.asInstanceOf[Option[_]]
-          if (optValue.isDefined) {
-            _setter(dest1.get, tarObj, optValue.get, parent)
-          }
-        } else if (value != null) {
-          _setter(dest1.get, tarObj, value, parent)
-        }
-      }
-    } catch {
-      case ex =>
-    }
-
-    try {
-      val dest2 = _getClass(tarObj).getDeclaredFields.filter(x => field.getName.contains(_fieldTypeName(x, tarObj))).headOption
-      if (dest2.isDefined) {
-        dest2.get.setAccessible(true)
-
-        var sourceValue: Any = field.get(obj)
-        if (sourceValue.isInstanceOf[Option[_]]) {
-          val optValue = sourceValue.asInstanceOf[Option[_]]
-          if (optValue.isDefined) {
-            sourceValue = optValue.get
-          }
-        }
-
-        if (sourceValue != null) {
-          var destValue: Any = dest2.get.get(tarObj)
-          if (destValue.isInstanceOf[Option[_]]) {
-            destValue = dest2.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].newInstance()
-            _reflect(sourceValue, destValue, (dest2.get, tarObj, true))
-          } else {
-            destValue = dest2.get.getGenericType.asInstanceOf[Class[_]].newInstance()
-            _reflect(sourceValue, destValue, (dest2.get, tarObj, false))
+  private def _checker(obj: Any, tarObj: Any, level: Int, field: Field = null, parent: (Field, Any, Boolean) = null): Unit = {
+    if (field != null) {
+      try {
+        // #Field~Parent Check Reflect
+        val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
+          || (if (parent != null) parent._1.getName + x.getName == field.getName else false)).headOption
+        if (dest1.isDefined) {
+          val value = field.get(obj)
+          if (value.isInstanceOf[Option[_]]) {
+            val optValue = value.asInstanceOf[Option[_]]
+            if (optValue.isDefined) {
+              _setter(dest1.get, tarObj, optValue.get, level, parent)
+            }
+          } else if (value != null) {
+            _setter(dest1.get, tarObj, value, level, parent)
           }
         }
       }
-    } catch {
-      case ex =>
-    }
-
-    try {
-      val dest3 = _getClass(tarObj).getDeclaredFields.filter(x => _classTypeName(obj) == _fieldTypeName(x, tarObj)).headOption
-      if(dest3.isDefined) {
-        dest3.get.setAccessible(true)
-        var destValue: Any = dest3.get.get(tarObj)
-        if (destValue.isInstanceOf[Option[_]]) {
-          destValue = dest3.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].newInstance()
-          _reflect(obj, destValue, (dest3.get, tarObj, true))
-        } else {
-          destValue = dest3.get.getGenericType.asInstanceOf[Class[_]].newInstance()
-          _reflect(obj, destValue, (dest3.get, tarObj, false))
-        }
+      catch {
+        case ex =>
       }
-    } catch {
-      case ex =>
+
+      try {
+        // #Field~Contains(TypeName) Object Reflect
+        val dest2 = _getClass(tarObj).getDeclaredFields.filter(x => field.getName.contains(_fieldTypeName(x, tarObj))).headOption
+        if (dest2.isDefined) {
+          dest2.get.setAccessible(true)
+
+          var sourceValue: Any = field.get(obj)
+          if (sourceValue.isInstanceOf[Option[_]]) {
+            val optValue = sourceValue.asInstanceOf[Option[_]]
+            if (optValue.isDefined) {
+              sourceValue = optValue.get
+            }
+          }
+
+          if (sourceValue != null) {
+            var destValue: Any = dest2.get.get(tarObj)
+            if (destValue.isInstanceOf[Option[_]]) {
+              destValue = dest2.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].newInstance()
+              _reflect(sourceValue, destValue, level + 1, (dest2.get, tarObj, true))
+            } else {
+              destValue = dest2.get.getGenericType.asInstanceOf[Class[_]].newInstance()
+              _reflect(sourceValue, destValue, level + 1, (dest2.get, tarObj, false))
+            }
+          }
+        }
+      } catch {
+        case ex =>
+      }
+
+      try {
+        // #Type+Field Combined Reflect
+        val dest3 = _getClass(tarObj).getDeclaredFields.filter(x => _classTypeName(obj) + x.getName == field.getName).headOption
+        if (dest3.isDefined) {
+          val value = field.get(obj)
+          if (value.isInstanceOf[Option[_]]) {
+            val optValue = value.asInstanceOf[Option[_]]
+            if (optValue.isDefined) {
+              _setter(dest3.get, tarObj, optValue.get, level, parent)
+            }
+          } else if (value != null) {
+            _setter(dest3.get, tarObj, value, level, parent)
+          }
+        }
+      } catch {
+        case ex =>
+      }
     }
 
     try {
-      val dest4 = _getClass(tarObj).getDeclaredFields.filter(x => _classTypeName(obj) + x.getName == field.getName).headOption
+      // #Object Reflect: History definition records are checked, if the current record is found, it jumps to the next field.
+      val dest4Source = _getClass(tarObj).getDeclaredFields.filter(x => _classTypeName(obj) == _fieldTypeName(x, tarObj))
+      val length = dest4Source.map(x => _history.filter(y => y == (_fieldTypeName(x, tarObj), level)).length).sum / dest4Source.length
+      val dest4 = dest4Source.drop(length).headOption
+
       if (dest4.isDefined) {
-        val value = field.get(obj)
+        dest4.get.setAccessible(true)
+        var destValue: Any = dest4.get.get(tarObj)
+        if (destValue.isInstanceOf[Option[_]]) {
+          destValue = dest4.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].newInstance()
+          _reflect(obj, destValue, level + 1, (dest4.get, tarObj, true))
+        } else {
+          destValue = dest4.get.getGenericType.asInstanceOf[Class[_]].newInstance()
+          _reflect(obj, destValue, level + 1, (dest4.get, tarObj, false))
+        }
+      }
+    } catch {
+      case ex =>
+    }
+
+    try {
+      // #Field Reflect: History definition records are checked, if the current record is found, it jumps to the next field.
+      val dest5Source = _getClass(tarObj).getDeclaredFields.filter(x => _setIsValid(obj) && _classTypeName(obj).toLowerCase().contains(_fieldTypeName(x, tarObj)))
+      val length = dest5Source.map(x => _history.filter(y => y == (_fieldTypeName(x, tarObj), level)).length).sum / dest5Source.length
+      val dest5 = dest5Source.drop(length).headOption
+      if (dest5.isDefined) {
+        val value = obj
         if (value.isInstanceOf[Option[_]]) {
           val optValue = value.asInstanceOf[Option[_]]
           if (optValue.isDefined) {
-            _setter(dest4.get, tarObj, optValue.get, parent)
+            _setter(dest5.get, tarObj, optValue.get, level, parent)
           }
         } else if (value != null) {
-          _setter(dest4.get, tarObj, value, parent)
+          _setter(dest5.get, tarObj, value, level, parent)
         }
       }
     } catch {
@@ -148,7 +185,7 @@ sealed class ReflectProvider {
     }
   }
 
-  private def _setter(field: Field, obj: Any, value: Any, parent: (Field, Any, Boolean) = null): Unit = {
+  private def _setter(field: Field, obj: Any, value: Any, level: Int, parent: (Field, Any, Boolean) = null): Unit = {
     field.setAccessible(true)
     try {
       if (_setIsValid(value)) {
@@ -168,6 +205,8 @@ sealed class ReflectProvider {
             parent._1.set(parent._2, obj)
           }
         }
+
+        _history = _history :+ (_fieldTypeName(field, obj), level)
       }
     } catch {
       case ex =>
