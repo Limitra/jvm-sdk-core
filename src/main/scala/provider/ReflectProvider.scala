@@ -13,7 +13,8 @@ sealed class ReflectProvider {
     */
   def FromTo[C](obj: Any)(implicit tag: ClassTag[C]): Option[C] = {
     _history = Seq()
-    val tarObj: C = tag.runtimeClass.getDeclaredConstructor().newInstance().asInstanceOf[C]
+
+    val tarObj: C = _instanceOf[C](tag.runtimeClass)
     return _controller(obj, tarObj, 0)
   }
 
@@ -112,10 +113,10 @@ sealed class ReflectProvider {
           if (sourceValue != null) {
             var destValue: Any = dest2.get.get(tarObj)
             if (destValue.isInstanceOf[Option[_]]) {
-              destValue = dest2.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].newInstance()
+              destValue = _instanceOf(dest2.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]])
               _reflect(sourceValue, destValue, level + 1, (dest2.get, tarObj, true))
             } else {
-              destValue = dest2.get.getGenericType.asInstanceOf[Class[_]].newInstance()
+              destValue = _instanceOf(dest2.get.getGenericType.asInstanceOf[Class[_]])
               _reflect(sourceValue, destValue, level + 1, (dest2.get, tarObj, false))
             }
           }
@@ -153,10 +154,10 @@ sealed class ReflectProvider {
         dest4.get.setAccessible(true)
         var destValue: Any = dest4.get.get(tarObj)
         if (destValue.isInstanceOf[Option[_]]) {
-          destValue = dest4.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].newInstance()
+          destValue = _instanceOf(dest4.get.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]])
           _reflect(obj, destValue, level + 1, (dest4.get, tarObj, true))
         } else {
-          destValue = dest4.get.getGenericType.asInstanceOf[Class[_]].newInstance()
+          destValue = _instanceOf(dest4.get.getGenericType.asInstanceOf[Class[_]])
           _reflect(obj, destValue, level + 1, (dest4.get, tarObj, false))
         }
       }
@@ -249,5 +250,28 @@ sealed class ReflectProvider {
   private def _setIsValid(obj: Any): Boolean = {
     val cls = _getClass(obj)
     return Seq("java.", "scala.").filter(x => cls.toString.contains(x)).length > 0
+  }
+
+  private def _instanceOf[C](cls: Class[_]): C = {
+    var args: Seq[AnyRef] = Seq()
+    cls.getDeclaredFields.foreach(field => {
+      field.setAccessible(true)
+      var arg: AnyRef = field.getType.getTypeName match {
+        case "scala.Option" => None
+        case "long" => new java.lang.Long(0)
+        case "int" => new java.lang.Integer(0)
+        case "float" => new java.lang.Float(0)
+        case "double" => new java.lang.Double(0)
+        case "byte" => new java.lang.Byte(0.toByte)
+        case "java.lang.String" => new java.lang.String("")
+        case "scala.math.BigDecimal" => BigDecimal(0)
+        case "scala.collection.Seq" => Seq()
+        case "scala.collection.immutable.List" => List()
+        case _ => null
+      }
+      args = args :+ arg
+    })
+
+    cls.getConstructors()(0).newInstance(args: _*).asInstanceOf[C]
   }
 }
