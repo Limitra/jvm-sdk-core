@@ -78,6 +78,7 @@ sealed class ReflectProvider {
     if (field != null) {
       try {
         // #Field~Parent Check Reflect
+        // Destination-One -> Checked For Nested Reflection -> Success
         val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
           || (if (parent != null) parent._1.getName + x.getName == field.getName else false)).headOption
         if (dest1.isDefined) {
