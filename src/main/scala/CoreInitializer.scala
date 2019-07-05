@@ -5,8 +5,9 @@ import com.limitra.sdk.core.provider._
 import org.joda.time.DateTime
 
 package object core {
-  lazy val Reflect = new ReflectProvider
   lazy val Crypto = new CryptoProvider
+
+  def Reflect: ReflectProvider = new ReflectProvider
   def Config(configName: String) = new ConfigProvider(configName)
 
   implicit def StringExt(value: String) = new StringExtender(value)
