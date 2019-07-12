@@ -7,14 +7,15 @@ import scala.concurrent.duration.Duration
 /**
   * It is used to make customized reading from the configuration file.
   */
-sealed class ConfigProvider(configName: String) {
-  private var _config = ConfigFactory.load().getConfig(configName)
+sealed class ConfigProvider(configName: String, config: Option[Config] = None) {
+  private val _config = if (config.isDefined) config.get else ConfigFactory.load().getConfig(configName)
 
   def Get(subConfig: String): ConfigProvider = {
-    if(_config.isResolved && !_config.isEmpty)
-      this._config = _config.getConfig(subConfig)
+    var newConfig: Option[Config] = None
+    if(_config.isResolved && !_config.isEmpty && !_config.getIsNull(subConfig))
+      newConfig = Some(_config.getConfig(subConfig))
 
-    return this
+    return new ConfigProvider("", newConfig)
   }
 
   def String(key: String, default: String = ""): String = {
