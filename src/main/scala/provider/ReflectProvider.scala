@@ -260,7 +260,7 @@ sealed class ReflectProvider {
       field.setAccessible(true)
       var arg: AnyRef = field.getType.getTypeName match {
         case "scala.Option" => None
-        case "scala.Boolean" => false.asInstanceOf[AnyRef]
+        case "boolean" => false.asInstanceOf[AnyRef]
         case "long" => new java.lang.Long(0)
         case "int" => new java.lang.Integer(0)
         case "float" => new java.lang.Float(0)
