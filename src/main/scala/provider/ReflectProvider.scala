@@ -80,7 +80,8 @@ sealed class ReflectProvider {
         // #Field~Parent Check Reflect
         // Destination-One -> Checked For Nested Reflection -> Success
         val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
-          || (if (parent != null) parent._1.getName + x.getName == field.getName else false)).headOption
+          || (if (parent != null) parent._1.getName + x.getName == field.getName else false)
+          || x.getName == _classTypeName(obj) + field.getName).headOption
         if (dest1.isDefined) {
           val value = field.get(obj)
           if (value.isInstanceOf[Option[_]]) {
@@ -259,6 +260,7 @@ sealed class ReflectProvider {
       field.setAccessible(true)
       var arg: AnyRef = field.getType.getTypeName match {
         case "scala.Option" => None
+        case "scala.Boolean" => false
         case "long" => new java.lang.Long(0)
         case "int" => new java.lang.Integer(0)
         case "float" => new java.lang.Float(0)

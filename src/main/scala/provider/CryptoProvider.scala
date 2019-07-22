@@ -1,7 +1,7 @@
 package com.limitra.sdk.core.provider
 
-import com.limitra.sdk.core._
 import com.google.api.client.util.Base64
+import com.limitra.sdk.core._
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
