@@ -17,7 +17,7 @@ final class DoubleExtender(value: Double) {
       pattern += "#"
     }
     val format = new DecimalFormat("###." + pattern)
-    return Double(format.format(value))
+    return format.format(value).toDouble
   }
 
   def ToText(frac: Int = 2, tag: String = "en-US"): String = {
