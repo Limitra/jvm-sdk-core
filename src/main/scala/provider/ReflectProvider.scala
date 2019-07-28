@@ -79,18 +79,21 @@ sealed class ReflectProvider {
       try {
         // #Field~Parent Check Reflect
         // Destination-One -> Checked For Nested Reflection -> Success
-        val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
-          || (if (parent != null) parent._1.getName + x.getName == field.getName else false)
-          || x.getName == _classTypeName(obj) + field.getName).headOption
-        if (dest1.isDefined) {
-          val value = field.get(obj)
-          if (value.isInstanceOf[Option[_]]) {
-            val optValue = value.asInstanceOf[Option[_]]
-            if (optValue.isDefined) {
-              _setter(dest1.get, tarObj, optValue.get, level, parent)
+        val skip = _history.filter(y => y == (_classTypeName(tarObj), level)).length > 0
+        if (!skip) {
+          val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
+            || (if (parent != null) parent._1.getName + x.getName == field.getName else false)
+            || x.getName == _classTypeName(obj) + field.getName).headOption
+          if (dest1.isDefined) {
+            val value = field.get(obj)
+            if (value.isInstanceOf[Option[_]]) {
+              val optValue = value.asInstanceOf[Option[_]]
+              if (optValue.isDefined) {
+                _setter(dest1.get, tarObj, optValue.get, level, parent)
+              }
+            } else if (value != null) {
+              _setter(dest1.get, tarObj, value, level, parent)
             }
-          } else if (value != null) {
-            _setter(dest1.get, tarObj, value, level, parent)
           }
         }
       }
