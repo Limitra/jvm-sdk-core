@@ -9,8 +9,6 @@ import scala.util.Try
   * Extension methods for String data type.
   */
 final class StringExtender(value: String) {
-  private val _culture = Config("Culture")
-
   def ToDecimal(frac: Int = 2): BigDecimal = {
     var vrVal: String = value
     if(vrVal.contains(".") && vrVal.contains(",")) {

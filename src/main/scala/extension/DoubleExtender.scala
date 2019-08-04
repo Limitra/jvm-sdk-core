@@ -8,8 +8,13 @@ import com.limitra.sdk.core._
 /**
   * Extension methods for Double data type.
   */
-final class DoubleExtender(value: Double) {
-  private val _culture = Config("Culture")
+final class DoubleExtender(lang: Option[String], value: Double) {
+  private val _alternate = "en-US"
+  private val _culture = Config("Application").Get("Culture")
+
+  private def _lang(tag: String): String = {
+    return lang.getOrElse(_culture.OptionString("DefaultLang").getOrElse(tag))
+  }
 
   def ToFixed(frac: Int = 2): Double = {
     var pattern = ""
@@ -20,19 +25,20 @@ final class DoubleExtender(value: Double) {
     return format.format(value).toDouble
   }
 
-  def ToText(frac: Int = 2, tag: String = "en-US"): String = {
-    val locale = Locale.forLanguageTag(_culture.OptionString("Lang").getOrElse(tag))
+  def ToText(frac: Int = 2, tag: String = _alternate): String = {
+    val locale = Locale.forLanguageTag(_lang(tag))
     val format = NumberFormat.getNumberInstance(locale)
     format.setMaximumFractionDigits(frac)
     format.setMinimumFractionDigits(frac)
     return format.format(value)
   }
 
-  def ToMoney(tag: String = "en-US"): String = {
-    val locale = Locale.forLanguageTag(_culture.OptionString("Lang").getOrElse(tag))
+  def ToMoney(tag: String = _alternate): String = {
+    val lang = _lang(tag)
+    val locale = Locale.forLanguageTag(lang)
     val format = NumberFormat.getCurrencyInstance(locale)
     var result = format.format(value)
-    if (tag == "tr-TR") {
+    if (lang == "tr-TR") {
       result = result.replace("TL", "₺")
     }
     return result
