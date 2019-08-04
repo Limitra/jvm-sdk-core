@@ -6,15 +6,15 @@ import org.joda.time.{DateTime, DateTimeZone}
 /**
   * Extension methods for Long data type.
   */
-final class LongExtender(lang: Option[String], value: Long) {
+final class LongExtender(zone: Option[Int], value: Long) {
   private val _culture = Config("Application").Get("Culture")
 
-  private def _zone(zone: String): String = {
-    return lang.getOrElse(_culture.OptionString("DefaultTimeZone").getOrElse(zone))
+  private def _zone(tag: Int): Int = {
+    return zone.getOrElse(_culture.OptionInt("DefaultTimeZone").getOrElse(tag))
   }
 
-  def ToDate(zone: String = "UTC"): DateTime = {
-    val timezone = DateTimeZone.forID(_zone(zone))
+  def ToDate(tag: Int = 0): DateTime = {
+    val timezone = DateTimeZone.forOffsetHours(_zone(tag))
     return new DateTime(value, timezone)
   }
 }
