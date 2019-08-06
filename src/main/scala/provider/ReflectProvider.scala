@@ -83,7 +83,9 @@ sealed class ReflectProvider {
         if (!skip) {
           val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
             || (if (parent != null) parent._1.getName + x.getName == field.getName else false)
-            || x.getName == _classTypeName(obj) + field.getName).headOption
+            || x.getName == _classTypeName(obj) + field.getName
+            || (x.getName.contains("_") && _classTypeName(obj).contains(x.getName.split('_').head) && field.getName == x.getName.split('_').last)
+          ).headOption
           if (dest1.isDefined) {
             val value = field.get(obj)
             if (value.isInstanceOf[Option[_]]) {
