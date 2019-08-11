@@ -15,7 +15,7 @@ sealed class CryptoProvider {
   val DES = new Crypto("DES")
 
   protected class Crypto(algorithmName: String) {
-    private val _secret = _config.String("Key")
+    private val _secret = _config.String("Secret")
 
     private def _encodeBase64(bytes: Array[Byte]) = Base64.encodeBase64String(bytes)
 
