@@ -79,6 +79,8 @@ sealed class ReflectProvider {
       try {
         // #Field~Parent Check Reflect
         // Destination-One -> Checked For Nested Reflection -> Success
+        val skip = _history.filter(y => y == (_classTypeName(tarObj), level)).length > 0
+        if (!skip) {
           val dest1 = _getClass(tarObj).getDeclaredFields.filter(x => x.getName == field.getName
             || (if (parent != null) parent._1.getName + x.getName == field.getName else false)
             || x.getName == _classTypeName(obj) + field.getName
@@ -95,6 +97,7 @@ sealed class ReflectProvider {
               _setter(dest1.get, tarObj, value, level, parent)
             }
           }
+        }
       }
       catch {
         case ex =>
