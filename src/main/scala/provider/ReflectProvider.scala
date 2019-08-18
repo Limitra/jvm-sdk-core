@@ -25,7 +25,7 @@ sealed class ReflectProvider {
     return _null[C](obj, tarObj, (real: Any, target: C) => {
       if (_classTypeName(real).contains("Tuple")) {
         var source: C = target
-        _getClass(real).getDeclaredFields.foreach(tuple => {
+        _getClass(real).getDeclaredFields.reverse.foreach(tuple => {
           tuple.setAccessible(true)
           val tupled = _null(tuple.get(real), target, (subReal: Any, subTarget: C) => {
             _controller(subReal, subTarget, level).getOrElse(target)
