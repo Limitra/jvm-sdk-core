@@ -1,8 +1,6 @@
 package com.limitra.sdk.core.extension
 
 import com.limitra.sdk.core._
-
-import scala.math._
 import scala.util.Try
 
 /**

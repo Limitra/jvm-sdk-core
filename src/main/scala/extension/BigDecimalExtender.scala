@@ -5,8 +5,6 @@ import java.util.Locale
 
 import com.limitra.sdk.core._
 
-import scala.math._
-
 /**
   * Extension methods for BigDecimal data type.
   */
