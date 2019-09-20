@@ -17,9 +17,9 @@ package object core {
 
   implicit def BigDecimalExt(value: BigDecimal) = new BigDecimalExtender(None, value)
 
+  implicit def DateTimeExt(value: DateTime) = new DateTimeExtender(None, value)
+
   implicit def StringExt(value: String) = new StringExtender(value)
 
   implicit def IntExt(value: Int) = new IntExtender(value)
-
-  implicit def DateTimeExt(value: DateTime) = new DateTimeExtender(value)
 }
