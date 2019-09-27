@@ -175,7 +175,7 @@ sealed class ReflectProvider {
 
     try {
       // #Field Reflect: History definition records are checked, if the current record is found, it jumps to the next field.
-      val dest5Source = _getClass(tarObj).getDeclaredFields.filter(x => _setIsValid(obj) && _classTypeName(obj).toLowerCase().contains(_fieldTypeName(x, tarObj)))
+      val dest5Source = _getClass(tarObj).getDeclaredFields.filter(x => _setIsValid(obj) && _classTypeName(obj).toLowerCase().contains(_fieldTypeName(x, tarObj).toLowerCase()))
       val length = dest5Source.map(x => _history.filter(y => y == (_fieldTypeName(x, tarObj), level)).length).sum / dest5Source.length
       val dest5 = dest5Source.drop(length).headOption
       if (dest5.isDefined) {
