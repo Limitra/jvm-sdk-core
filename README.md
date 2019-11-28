@@ -22,57 +22,57 @@ Apache Maven
 <dependency>
   <groupId>com.limitra.sdk</groupId>
   <artifactId>core_2.12</artifactId>
-  <version>0.0.1-alpha-4</version>
+  <version>0.0.1</version>
 </dependency>
 ````
 
 Gradle Groovy DSL
 ````Gradle Groovy DSL
-implementation 'com.limitra.sdk:core_2.12:0.0.1-alpha-4'
+implementation 'com.limitra.sdk:core_2.12:0.0.1'
 ````
 
 Gradle Kotlin DSL
 ````Gradle Kotlin DSL
-compile("com.limitra.sdk:core_2.12:0.0.1-alpha-4")
+compile("com.limitra.sdk:core_2.12:0.0.1")
 ````
 
 Scala SBT
 ````Scala SBT
-libraryDependencies += "com.limitra.sdk" %% "core_2.12" % "0.0.1-alpha-4"
+libraryDependencies += "com.limitra.sdk" %% "core_2.12" % "0.0.1"
 ````
 
 Apache Ivy
 ````Apache Ivy
-<dependency org="com.limitra.sdk" name="core_2.12" rev="0.0.1-alpha-4" />
+<dependency org="com.limitra.sdk" name="core_2.12" rev="0.0.1" />
 ````
 
 Groovy Grape
 ````Groovy Grape
 @Grapes(
-  @Grab(group='com.limitra.sdk', module='core_2.12', version='0.0.1-alpha-4')
+  @Grab(group='com.limitra.sdk', module='core_2.12', version='0.0.1')
 )
 ````
 
 Leiningen
 ````Leiningen
-[com.limitra.sdk/core_2.12 "0.0.1-alpha-4"]
+[com.limitra.sdk/core_2.12 "0.0.1"]
 ````
 
 Apache Buildr
 ````Apache Buildr
-'com.limitra.sdk:core_2.12:jar:0.0.1-alpha-4'
+'com.limitra.sdk:core_2.12:jar:0.0.1'
 ````
 
 PURL
 ````PURL
-pkg:maven/com.limitra.sdk/core_2.12@0.0.1-alpha-4
+pkg:maven/com.limitra.sdk/core_2.12@0.0.1
 ````
 
 Bazel
 ````Bazel
 maven_jar(
     name = "core_2.12",
-    artifact = "com.limitra.sdk:core_2.12:0.0.1-alpha-4",
+    artifact = "com.limitra.sdk:core_2.12:0.0.1",
     sha1 = "1e6a92c040719951bd9ab7710579736bc771539f",
 )
 ````
