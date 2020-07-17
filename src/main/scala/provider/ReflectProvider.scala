@@ -1,7 +1,6 @@
 package com.limitra.sdk.core.provider
 
 import java.lang.reflect.{Field, ParameterizedType}
-
 import scala.reflect.ClassTag
 
 sealed class ReflectProvider {
@@ -242,11 +241,20 @@ sealed class ReflectProvider {
 
   private def _fieldTypeName(field: Field, obj: Any): String = {
     field.setAccessible(true)
-
+    import scala.reflect.runtime.{universe => ru}
     try {
       val value = field.get(obj)
       if (value.isInstanceOf[Option[_]]) {
-        return _typeNameSim(field.getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[_]].getSimpleName)
+
+        val classLoader = Thread.currentThread().getContextClassLoader
+        val mirror = ru.runtimeMirror(classLoader)
+        val classSymbol = mirror.staticClass(field.getDeclaringClass.getTypeName)
+        val fieldName = classSymbol.selfType.members.filter(x => x.fullName.contains("_$eq") &&
+          x.name.encodedName.toString.replace("_$eq", "") == field.getName).map(mem => {
+          mem.typeSignature.toString.split('[')(1).split(']')(0)
+        }).headOption
+
+        return _typeNameSim(fieldName.getOrElse(""))
       } else {
         return _typeNameSim(field.getGenericType.asInstanceOf[Class[_]].getSimpleName)
       }
@@ -264,6 +272,7 @@ sealed class ReflectProvider {
     var args: Seq[AnyRef] = Seq()
     cls.getDeclaredFields.foreach(field => {
       field.setAccessible(true)
+
       var arg: AnyRef = field.getType.getTypeName match {
         case "scala.Option" => None
         case "boolean" => false.asInstanceOf[AnyRef]
