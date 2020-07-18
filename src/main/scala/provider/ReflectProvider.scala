@@ -5,11 +5,11 @@ import scala.reflect.ClassTag
 
 sealed class ReflectProvider {
   /**
-    * Converts a first specified type of object to the second specified type and returns the new instance as a result.
-    * Example :
-    * val aObj: A = new A()
-    * val bObj: B = Reflect.FromTo[A, B](aObj)
-    */
+   * Converts a first specified type of object to the second specified type and returns the new instance as a result.
+   * Example :
+   * val aObj: A = new A()
+   * val bObj: B = Reflect.FromTo[A, B](aObj)
+   */
   def FromTo[C](obj: Any)(implicit tag: ClassTag[C]): Option[C] = {
     _history = Seq()
 
@@ -245,16 +245,25 @@ sealed class ReflectProvider {
     try {
       val value = field.get(obj)
       if (value.isInstanceOf[Option[_]]) {
-
         val classLoader = Thread.currentThread().getContextClassLoader
         val mirror = ru.runtimeMirror(classLoader)
         val classSymbol = mirror.staticClass(field.getDeclaringClass.getTypeName)
-        val fieldName = classSymbol.selfType.members.filter(x => x.fullName.contains("_$eq") &&
+        val typeName = classSymbol.selfType.members.filter(x => x.fullName.contains("_$eq") &&
           x.name.encodedName.toString.replace("_$eq", "") == field.getName).map(mem => {
-          mem.typeSignature.toString.split('[')(1).split(']')(0)
-        }).headOption
+          var signature = mem.typeSignature.toString
+          signature = signature.split('(')(1).split(')')(0).replace("x$1: ", "")
 
-        return _typeNameSim(fieldName.getOrElse(""))
+          if (signature.contains("Option")) {
+            signature = signature.split('[')(1).split(']')(0)
+          }
+
+          val partials = signature.split('.')
+          signature = partials(partials.length - 1)
+
+          signature
+        }).headOption.getOrElse("")
+
+        return _typeNameSim(typeName)
       } else {
         return _typeNameSim(field.getGenericType.asInstanceOf[Class[_]].getSimpleName)
       }
