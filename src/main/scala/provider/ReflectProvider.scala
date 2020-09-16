@@ -1,6 +1,7 @@
 package com.limitra.sdk.core.provider
 
 import java.lang.reflect.{Field, ParameterizedType}
+
 import scala.reflect.ClassTag
 
 sealed class ReflectProvider {

@@ -1,8 +1,8 @@
 package com.limitra.sdk
 
-import com.limitra.sdk.core.{definition => df}
 import com.limitra.sdk.core.extension._
 import com.limitra.sdk.core.provider._
+import com.limitra.sdk.core.{definition => df}
 import org.joda.time.DateTime
 
 package object core {
