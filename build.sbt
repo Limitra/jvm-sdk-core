@@ -8,5 +8,6 @@ libraryDependencies ++= Seq(
   "joda-time" % "joda-time" % "2.10.10",
   "com.google.apis" % "google-api-services-oauth2" % "v2-rev157-1.25.0"
 )
+logLevel := Level.Error
 
 pgpReadOnly := false
