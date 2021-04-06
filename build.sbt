@@ -1,6 +1,6 @@
 name := "core"
 
-version := "0.0.6"
+version := "0.0.7"
 scalaVersion := "2.13.5"
 libraryDependencies ++= Seq(
   "com.typesafe" % "config" % "1.3.2",
