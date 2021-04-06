@@ -2,8 +2,9 @@ package com.limitra.sdk.core.extension
 
 import java.text._
 import java.util.Locale
-
 import com.limitra.sdk.core._
+
+import scala.math.BigDecimal.RoundingMode
 
 /**
   * Extension methods for BigDecimal data type.
@@ -17,12 +18,7 @@ final class BigDecimalExtender(lang: Option[String], value: BigDecimal) {
   }
 
   def ToFixed(frac: Int = 2): BigDecimal = {
-    var pattern = ""
-    for (i <- 1 to frac) {
-      pattern += "#"
-    }
-    val format = new DecimalFormat("###." + pattern)
-    return BigDecimal(format.format(value))
+    return value.setScale(frac, RoundingMode.FLOOR)
   }
 
   def ToText(frac: Int = 2, tag: String = _alternate): String = {
